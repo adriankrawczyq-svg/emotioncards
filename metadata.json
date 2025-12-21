@@ -1,0 +1,5 @@
+{
+  "name": "Karty Emocji",
+  "description": "Aplikacja symuluje talię kart metaforycznych (emocji). Po wylosowaniu karty, generowane są kontekstowe pytania pomocnicze do pracy własnej.",
+  "requestFramePermissions": []
+}
