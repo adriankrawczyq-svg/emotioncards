@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { MessageCircleQuestion, Brain, Send, User, Mail, Phone, Calendar, CheckCircle, Heart, PenTool } from 'lucide-react';
+import { MessageCircleQuestion, Brain, Send, User, Mail, Phone, Calendar, CheckCircle, Heart, PenTool, AlertCircle } from 'lucide-react';
+import emailjs from '@emailjs/browser';
+
+// --- KONFIGURACJA EMAIL ---
+// Zarejestruj się na https://www.emailjs.com/
+// Utwórz Service (np. Gmail) i Template
+const EMAIL_CONFIG = {
+  SERVICE_ID: 'service_bpst954',   
+  TEMPLATE_ID: 'template_u5172bb', 
+  PUBLIC_KEY: 'f9Vj1_DeGaLrqDCl0'    
+};
 
 interface QuestionListProps {
   questions: string[];
@@ -25,12 +35,14 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
     email: '',
     phone: ''
   });
-  const [status, setStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Reset form when card changes
   useEffect(() => {
     setAnswers({});
     setStatus('idle');
+    setErrorMessage('');
   }, [cardName, questions]);
 
   if (!cardName && !isLoading) return null;
@@ -43,19 +55,62 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
     setContact(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('sending');
+    setErrorMessage('');
+
+    // Mapowanie płci na język polski dla czytelności w mailu
+    const genderMap: Record<string, string> = {
+      'female': 'Kobieta',
+      'male': 'Mężczyzna',
+      'other': 'Inna',
+      '': 'Nie podano'
+    };
+
+    // 1. Budowanie treści wiadomości (Dane + Odpowiedzi)
+    // Dzięki temu, nawet jeśli w EmailJS masz tylko zmienną {{message}}, wszystkie dane tam będą.
+    let fullMessageBody = "=== DANE UCZESTNIKA ===\n";
+    fullMessageBody += `Imię: ${contact.name}\n`;
+    fullMessageBody += `Wiek: ${contact.age}\n`;
+    fullMessageBody += `Płeć: ${genderMap[contact.gender] || contact.gender}\n`;
+    fullMessageBody += `Telefon: ${contact.phone || 'Nie podano'}\n`;
+    fullMessageBody += `Email: ${contact.email}\n\n`;
     
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Sending data to Holistic Mentor:', {
-        card: cardName,
-        answers,
-        contact
-      });
+    fullMessageBody += `=== PRACA Z KARTĄ: ${cardName} ===\n\n`;
+
+    questions.forEach((q, idx) => {
+      fullMessageBody += `PYTANIE ${idx + 1}: ${q}\n`;
+      fullMessageBody += `ODPOWIEDŹ: ${answers[idx] || '--- brak odpowiedzi ---'}\n\n`;
+    });
+
+    // 2. Przygotowanie parametrów do EmailJS
+    const templateParams = {
+      name: contact.name,           // {{name}}
+      email: contact.email,         // {{email}}
+      message: fullMessageBody,     // {{message}} - teraz zawiera też dane osobowe
+      card_name: cardName,          // {{card_name}}
+      
+      // Przesyłamy też osobno, na wypadek gdybyś chciał użyć {{phone}} w temacie maila itp.
+      phone: contact.phone,
+      age: contact.age,
+      gender: contact.gender
+    };
+
+    try {
+      await emailjs.send(
+        EMAIL_CONFIG.SERVICE_ID,
+        EMAIL_CONFIG.TEMPLATE_ID,
+        templateParams,
+        EMAIL_CONFIG.PUBLIC_KEY
+      );
+      
       setStatus('sent');
-    }, 1500);
+    } catch (error: any) {
+      console.error('Błąd wysyłania emaila:', error);
+      setStatus('error');
+      setErrorMessage(error.text || error.message || 'Wystąpił nieoczekiwany błąd podczas wysyłania.');
+    }
   };
 
   if (status === 'sent') {
@@ -66,8 +121,8 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
         </div>
         <h3 className="font-serif text-2xl text-slate-800 font-bold mb-4">Dziękuję, {contact.name}!</h3>
         <p className="text-slate-600 mb-6 leading-relaxed">
-          Twoje odpowiedzi dotyczące karty <strong>"{cardName}"</strong> zostały bezpiecznie wysłane.<br/>
-          Holistyczny Mentor przeanalizuje je i skontaktuje się z Tobą wkrótce, aby wesprzeć Twój proces.
+          Twoje odpowiedzi dotyczące karty <strong>"{cardName}"</strong> zostały bezpiecznie wysłane na wskazany adres e-mail.<br/>
+          Holistyczny Mentor przeanalizuje je i skontaktuje się z Tobą wkrótce.
         </p>
         <button 
           onClick={() => setStatus('idle')}
@@ -219,6 +274,17 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
                       />
                     </div>
                   </div>
+
+                  {status === 'error' && (
+                    <div className="flex items-start gap-3 bg-red-100 border border-red-200 p-4 rounded-lg text-red-800 text-sm">
+                        <AlertCircle className="w-5 h-5 shrink-0" />
+                        <div>
+                            <p className="font-bold">Wystąpił błąd przy wysyłaniu:</p>
+                            <p>{errorMessage}</p>
+                            <p className="mt-2 text-xs opacity-75">Sprawdź czy wpisałeś poprawne klucze API w kodzie (SERVICE_ID, TEMPLATE_ID, PUBLIC_KEY).</p>
+                        </div>
+                    </div>
+                  )}
 
                   <div className="pt-6">
                     <button 

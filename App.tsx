@@ -36,15 +36,23 @@ const App: React.FC = () => {
         // 2. If not cached, try to generate using Gemini 3 Pro
         try {
             // Check for API key access in this specific environment if required
-            if (window.aistudio && window.aistudio.hasSelectedApiKey) {
-                const hasKey = await window.aistudio.hasSelectedApiKey();
+            if ((window as any).aistudio && (window as any).aistudio.hasSelectedApiKey) {
+                const hasKey = await (window as any).aistudio.hasSelectedApiKey();
                 if (!hasKey) {
                     // We don't block the app, just stay with the default fallback
                     return; 
                 }
             }
 
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            // Access API Key via process.env as per guidelines
+            const apiKey = process.env.API_KEY;
+            
+            if (!apiKey) {
+              console.warn("No API key found. Using default card back.");
+              return;
+            }
+
+            const ai = new GoogleGenAI({ apiKey: apiKey });
             const response = await ai.models.generateContent({
                 model: 'gemini-3-pro-image-preview',
                 contents: {
