@@ -9,12 +9,17 @@ export const generateQuestionsForCard = async (card: EmotionCard): Promise<strin
   await new Promise(resolve => setTimeout(resolve, 300));
 
   // Universal therapeutic questions for metaphor cards
-  // Model: Observation -> Emotion -> Reflection -> Insight
+  // Updated to 5 specific questions as requested.
   const questions = [
-    `Co widzisz na obrazku? Opisz to, co dostrzegasz na pierwszym planie i w tle, bez interpretowania. Jakie kolory i kształty przyciągają Twoją uwagę?`,
-    `Co czujesz patrząc na tę kartę? Jakie emocje pojawiają się w Twoim ciele? Czy obraz budzi w Tobie spokój, napięcie, czy może coś innego?`,
-    `W jaki sposób ten obraz odnosi się do Twojej obecnej sytuacji życiowej? Czy dostrzegasz tu jakąś metaforę tego, co dzieje się teraz u Ciebie?`,
-    `Jaka jest dla Ciebie wskazówka płynąca z tej karty? Jaki jeden mały krok możesz wykonać, aby zadbać o siebie w tym obszarze?`
+    `Pierwsze poruszenie\n\nCo pojawia się w Tobie jako pierwsze, gdy widzisz tę kartę (obraz, słowo)? Jakie myśli, obrazy, emocje lub wspomnienia przychodzą spontanicznie – bez analizowania?\nTu nie chodzi o „ładną odpowiedź”, tylko o prawdziwą reakcję.`,
+    
+    `Związek z Twoim „teraz”\n\nJak to odnosi się do Twojej obecnej sytuacji życiowej? W jakim obszarze czujesz, że dotyka Cię najmocniej: decyzji, relacji, pracy, zdrowia, poczucia sensu?\nCzy to słowo / obraz miało dla Ciebie kiedyś inne znaczenie niż teraz? Jeśli tak – co się zmieniło?`,
+    
+    `Mechanizm pod spodem\n\nCo ta karta mówi o Twoich przekonaniach, wartościach lub sposobie działania? Jakie decyzje lub zachowania podejmujesz, gdy kierujesz się tym, co ona reprezentuje?\nA co dzieje się, gdy to ignorujesz?`,
+    
+    `Napięcie czy wsparcie?\n\nCzy ta karta pokazuje dziś coś, co jest dla Ciebie bardziej: napięciem, kierunkiem, czy potwierdzeniem?\nCo w Twoim życiu byłoby inne, gdybyś był/a na to bardziej uważny/a na co dzień?`,
+    
+    `Integracja – najważniejsze pytanie\n\nCo te odpowiedzi mówią Ci o Tobie i o sytuacji, z którą tu przyszłaś/przyszedłeś? Jaki jeden mały, ale konkretny krok mógłbyś/mogłabyś podjąć w najbliższych dniach lub tygodniach, żeby to przesłanie zaczęło realnie działać w Twoim życiu?\nNie „na zawsze”. Na teraz.`
   ];
 
   return questions;

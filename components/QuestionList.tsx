@@ -171,7 +171,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
                     <div className="shrink-0 w-8 h-8 rounded-full bg-red-50 text-red-800 border border-red-100 flex items-center justify-center font-serif font-bold text-sm group-hover:bg-red-100 transition-colors shadow-sm">
                         {idx + 1}
                     </div>
-                    <p className="text-slate-800 leading-relaxed pt-1 font-medium font-serif">
+                    <p className="text-slate-800 leading-relaxed pt-1 font-medium font-serif whitespace-pre-line">
                         {q}
                     </p>
                   </div>
@@ -192,11 +192,12 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
               <div className="bg-gradient-to-br from-stone-50 to-red-50/20 rounded-xl p-8 border border-stone-200">
                 <div className="flex items-center gap-2 mb-6 text-red-900">
                    <Heart className="w-5 h-5 text-red-700 fill-red-700" />
-                   <h3 className="font-serif font-bold text-lg">Wyślij do Holistycznego Mentora</h3>
+                   <h3 className="font-serif font-bold text-lg">Podziel się przemyśleniami z Holistycznym mentorem</h3>
                 </div>
                 
-                <p className="text-sm text-stone-600 mb-8 leading-relaxed">
-                  Podziel się swoimi wglądami. Wypełnij poniższy formularz, aby przesłać swoje odpowiedzi. Mentor zapozna się z nimi i wróci do Ciebie z informacją zwrotną.
+                <p className="text-sm text-stone-600 mb-8 leading-relaxed whitespace-pre-line">
+                  Jeśli po odpowiedziach poczujesz, że to, co się pojawiło, jest dla Ciebie ważne i chcesz spojrzeć na to z zewnątrz, możesz zostawić swoje dane i przesłać mi refleksje.{"\n"}
+                  Odezwę się z krótkim feedbackiem – i wtedy zobaczymy, czy to moment, w którym mogę Cię realnie wesprzeć.
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
@@ -297,12 +298,12 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
                       ) : (
                         <>
                           <Send className="w-5 h-5" />
-                          <span className="font-serif tracking-wide">Wyślij do Holistycznego Mentora</span>
+                          <span className="font-serif tracking-wide">Wyślij swoje odpowiedzi</span>
                         </>
                       )}
                     </button>
-                    <p className="text-center text-xs text-stone-400 mt-4">
-                        Twoje dane są bezpieczne i służą wyłącznie do kontaktu zwrotnego.
+                    <p className="text-center text-xs text-stone-400 mt-4 leading-relaxed">
+                        Klikając 'Wyślij', zgadzasz się na przetwarzanie Twoich danych osobowych przez MW Harmony Marta Wysocka w celu obsługi Twoich odpowiedzi i przesłania oferty. Masz prawo do wglądu w swoje dane oraz ich usunięcia itp.
                     </p>
                   </div>
                 </form>

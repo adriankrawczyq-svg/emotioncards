@@ -91,6 +91,9 @@ const App: React.FC = () => {
   const handleDrawCard = useCallback(async () => {
     if (isDrawing || isLoadingQuestions) return;
 
+    // Capture the current card ID before clearing it to prevent duplicates
+    const previousCardId = currentCard?.id;
+
     setIsDrawing(true);
     
     // Reset state if card is currently shown
@@ -108,8 +111,18 @@ const App: React.FC = () => {
       // Always use the main predefined deck
       const currentDeck = PREDEFINED_DECKS[0];
       
-      const randomIndex = Math.floor(Math.random() * currentDeck.cards.length);
-      const selectedCard = currentDeck.cards[randomIndex];
+      let randomIndex = Math.floor(Math.random() * currentDeck.cards.length);
+      let selectedCard = currentDeck.cards[randomIndex];
+
+      // Ensure we don't draw the exact same card twice in a row (if deck has > 1 card)
+      if (previousCardId && currentDeck.cards.length > 1) {
+        let attempts = 0;
+        while (selectedCard.id === previousCardId && attempts < 5) {
+            randomIndex = Math.floor(Math.random() * currentDeck.cards.length);
+            selectedCard = currentDeck.cards[randomIndex];
+            attempts++;
+        }
+      }
       
       setCurrentCard(selectedCard);
       setIsFlipped(true);
@@ -117,7 +130,7 @@ const App: React.FC = () => {
 
       fetchQuestions(selectedCard);
     }, 800);
-  }, [isDrawing, isFlipped, isLoadingQuestions]);
+  }, [isDrawing, isFlipped, isLoadingQuestions, currentCard]);
 
   const fetchQuestions = async (card: EmotionCard) => {
     setIsLoadingQuestions(true);
