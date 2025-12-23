@@ -63,7 +63,7 @@ const RAW_EMOTIONS = [
   { id: 'e48', name: 'Zachwyt', description: 'Rainbow over waterfall, wide open eyes', question: 'Co ostatnio wprawiło Cię w osłupienie swoim pięknem?' },
   { id: 'e49', name: 'Zaufanie', description: 'Falling backwards into arms, blindfold, bridge', question: 'Komu ufasz bezgranicznie?' },
   { id: 'e50', name: 'Zawiść', description: 'Snake with green eyes looking at gold', question: 'Czego zazdrościsz innym, a czego sam sobie nie dajesz?' },
-  { id: 'e51', name: 'Zazdrość', description: 'Two people holding hands, third person watching from shadows', question: 'O kogo lub o co boisz się utracić wyłączność?' },
+  { id: 'e51', name: 'Zazdrość', description: 'Two people holding hands, third person watching from shadows', question: 'W jakiej relacji czujesz lęk przed utratą wyłączności lub byciem zastąpionym?' },
   { id: 'e52', name: 'Zażenowanie', description: 'Cheeks turning red, dropping papers, looking down', question: 'W jakich sytuacjach czujesz się nieswojo?' },
   { id: 'e53', name: 'Zgoda', description: 'Shaking hands, white flag, sunrise', question: 'Na co wreszcie się zgodziłeś, kończąc walkę?' },
   { id: 'e54', name: 'Złość', description: 'Clenched fist, red aura, steam', question: 'Co Cię złości w zachowaniu innych ludzi?' },
