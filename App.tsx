@@ -23,7 +23,7 @@ const App: React.FC = () => {
   
   // Audio State
   const [isMuted, setIsMuted] = useState(false);
-  const [volume, setVolume] = useState(0.3); // Default volume 30%
+  const [volume, setVolume] = useState(0.1); // Default volume 10%
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
   // Card Back State
