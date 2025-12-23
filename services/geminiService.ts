@@ -9,15 +9,13 @@ export const generateQuestionsForCard = async (card: EmotionCard): Promise<strin
   await new Promise(resolve => setTimeout(resolve, 300));
 
   // Universal therapeutic questions for metaphor cards
-  // Updated to 5 specific questions as requested.
+  // Updated to 4 specific questions as requested.
   const questions = [
     `Pierwsze poruszenie\n\nCo pojawia się w Tobie jako pierwsze, gdy widzisz tę kartę (obraz, słowo)? Jakie myśli, obrazy, emocje lub wspomnienia przychodzą spontanicznie – bez analizowania?\nTu nie chodzi o „ładną odpowiedź”, tylko o prawdziwą reakcję.`,
     
     `Związek z Twoim „teraz”\n\nJak to odnosi się do Twojej obecnej sytuacji życiowej? W jakim obszarze czujesz, że dotyka Cię najmocniej: decyzji, relacji, pracy, zdrowia, poczucia sensu?\nCzy to słowo / obraz miało dla Ciebie kiedyś inne znaczenie niż teraz? Jeśli tak – co się zmieniło?`,
     
-    `Mechanizm pod spodem\n\nCo ta karta mówi o Twoich przekonaniach, wartościach lub sposobie działania? Jakie decyzje lub zachowania podejmujesz, gdy kierujesz się tym, co ona reprezentuje?\nA co dzieje się, gdy to ignorujesz?`,
-    
-    `Napięcie czy wsparcie?\n\nCzy ta karta pokazuje dziś coś, co jest dla Ciebie bardziej: napięciem, kierunkiem, czy potwierdzeniem?\nCo w Twoim życiu byłoby inne, gdybyś był/a na to bardziej uważny/a na co dzień?`,
+    `Co ta karta mówi o Twoim sposobie działania?\n\nCzy pokazuje dziś napięcie, kierunek czy potwierdzenie?\nCo się dzieje, gdy to ignorujesz – a co mogłoby się zmienić, gdybyś był/a na to uważny/a?`,
     
     `Integracja – najważniejsze pytanie\n\nCo te odpowiedzi mówią Ci o Tobie i o sytuacji, z którą tu przyszłaś/przyszedłeś? Jaki jeden mały, ale konkretny krok mógłbyś/mogłabyś podjąć w najbliższych dniach lub tygodniach, żeby to przesłanie zaczęło realnie działać w Twoim życiu?\nNie „na zawsze”. Na teraz.`
   ];

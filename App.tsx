@@ -1,17 +1,18 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { PREDEFINED_DECKS, CARD_BACK_URL } from './constants';
 import { EmotionCard } from './types';
 import { generateQuestionsForCard } from './services/geminiService';
 import { CardDisplay } from './components/CardDisplay';
 import { QuestionList } from './components/QuestionList';
-import { CardGallery } from './components/CardGallery';
-import { Feather, Sparkles, RotateCcw, ArrowRight, Grid, Home } from 'lucide-react';
+import { Feather, Sparkles, RotateCcw, ArrowRight, Volume2, VolumeX } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
+
+// Relaxing ambient music URL
+const BACKGROUND_MUSIC_URL = "https://cdn.pixabay.com/audio/2022/03/09/audio_a77028ce55.mp3";
 
 const App: React.FC = () => {
   // App Flow State
   const [hasStarted, setHasStarted] = useState(false);
-  const [view, setView] = useState<'draw' | 'gallery'>('draw');
 
   // Session State
   const [currentCard, setCurrentCard] = useState<EmotionCard | null>(null);
@@ -19,6 +20,10 @@ const App: React.FC = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [questions, setQuestions] = useState<string[]>([]);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
+  
+  // Audio State
+  const [isMuted, setIsMuted] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   
   // Card Back State
   const [cardBackUrl, setCardBackUrl] = useState<string>(CARD_BACK_URL);
@@ -84,6 +89,29 @@ const App: React.FC = () => {
     initCardBack();
   }, []);
 
+  // --- Audio Control ---
+  
+  useEffect(() => {
+    // Attempt to play audio when the app starts (after user interaction)
+    if (hasStarted && audioRef.current) {
+        audioRef.current.volume = 0.3; // Set low volume for background
+        if (!isMuted) {
+            audioRef.current.play().catch(e => console.log("Audio autoplay blocked or failed:", e));
+        }
+    }
+  }, [hasStarted, isMuted]);
+
+  const toggleMute = () => {
+    if (audioRef.current) {
+        if (isMuted) {
+            audioRef.current.play().catch(e => console.error("Play failed", e));
+        } else {
+            audioRef.current.pause();
+        }
+        setIsMuted(!isMuted);
+    }
+  };
+
   // --- Actions ---
 
   const handleStart = () => {
@@ -134,22 +162,6 @@ const App: React.FC = () => {
     }, 800);
   }, [isDrawing, isFlipped, isLoadingQuestions, currentCard]);
 
-  const handleSelectCardFromGallery = (card: EmotionCard) => {
-    setView('draw');
-    setIsDrawing(true);
-    setCurrentCard(null);
-    setQuestions([]);
-    setIsFlipped(false);
-
-    // Short delay to simulate transition/loading
-    setTimeout(() => {
-        setCurrentCard(card);
-        setIsFlipped(true);
-        setIsDrawing(false);
-        fetchQuestions(card);
-    }, 300);
-  };
-
   const fetchQuestions = async (card: EmotionCard) => {
     setIsLoadingQuestions(true);
     const generatedQuestions = await generateQuestionsForCard(card);
@@ -171,7 +183,7 @@ const App: React.FC = () => {
             
             <div className="space-y-6">
               <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold text-stone-100 leading-tight">
-                Witaj.
+                Witaj w Punkcie Przejścia.
               </h1>
               <p className="text-xl text-stone-300 font-serif">
                 To jest krótka chwila tylko dla Ciebie.
@@ -182,7 +194,7 @@ const App: React.FC = () => {
               <div className="space-y-6 text-stone-400 text-lg leading-relaxed font-light font-serif max-w-xl mx-auto">
                 <p>
                   Zatrzymaj się na moment.<br/>
-                  Znajdź spokojne miejsce, weź kilka wolnych oddechów i pozwól sobie na szczerość wobec siebie – bez oceniania, bez poprawiania czegokolwiek.
+                  Znajdź spokojne miejsce, weź kilka głębokich oddechów i pozwól sobie na szczerość wobec siebie – bez oceniania, bez poprawiania czegokolwiek.
                 </p>
                 <p>
                   To ćwiczenie nie jest po to, żeby „coś naprawić”.<br/>
@@ -208,131 +220,121 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen text-stone-200 font-sans selection:bg-red-900 selection:text-white flex flex-col bg-texture">
       
+      {/* Background Audio */}
+      <audio ref={audioRef} src={BACKGROUND_MUSIC_URL} loop />
+
       {/* Header */}
       <header className="bg-[#0f1513] border-b border-[#2a3832] sticky top-0 z-50 shadow-md">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3" onClick={() => setView('draw')} role="button">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.location.reload()}>
             <div className="bg-gradient-to-br from-red-900 to-red-700 p-2 rounded-lg text-white shadow-lg shadow-red-900/20 ring-1 ring-red-800/50">
                 <Feather className="w-6 h-6" />
             </div>
             <div>
-                <h1 className="font-serif text-xl font-bold text-stone-200 tracking-tight leading-none">Talia do pracy nad emocjami</h1>
+                <h1 className="font-serif text-xl font-bold text-stone-200 tracking-tight leading-none">Punkt Przejścia – karta prawdy na teraz</h1>
             </div>
           </div>
 
-          <nav className="flex gap-2">
+          <div className="flex items-center gap-2">
+            {/* Music Toggle */}
             <button 
-                onClick={() => setView('draw')}
-                className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all text-sm font-medium ${view === 'draw' ? 'bg-[#2a3832] text-amber-500' : 'text-stone-400 hover:text-stone-200 hover:bg-[#1c2622]'}`}
+                onClick={toggleMute}
+                className="w-10 h-10 flex items-center justify-center rounded-lg text-stone-400 hover:text-amber-500 hover:bg-[#1c2622] transition-all"
+                title={isMuted ? "Włącz muzykę" : "Wycisz muzykę"}
             >
-                <Home className="w-4 h-4" />
-                <span className="hidden sm:inline">Losowanie</span>
+                {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
             </button>
-            <button 
-                onClick={() => setView('gallery')}
-                className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all text-sm font-medium ${view === 'gallery' ? 'bg-[#2a3832] text-amber-500' : 'text-stone-400 hover:text-stone-200 hover:bg-[#1c2622]'}`}
-            >
-                <Grid className="w-4 h-4" />
-                <span className="hidden sm:inline">Przeglądaj talię</span>
-            </button>
-          </nav>
+          </div>
         </div>
       </header>
 
       <main className="flex-grow max-w-6xl mx-auto px-4 py-8 w-full">
         
-        {view === 'gallery' ? (
-             <CardGallery 
-                cards={PREDEFINED_DECKS[0].cards} 
-                onSelectCard={handleSelectCardFromGallery}
-             />
-        ) : (
-            <div className="animate-fade-in flex flex-col gap-12">
-                <div className="flex flex-col lg:flex-row gap-12 items-start justify-center">
-                    {/* Left Column: The Deck/Card */}
-                    <div className="w-full lg:w-1/3 flex flex-col items-center relative lg:sticky lg:top-24 z-10">
-                        <CardDisplay 
-                            card={currentCard} 
-                            isFlipped={isFlipped} 
-                            onDraw={handleDrawCard}
-                            disabled={isDrawing || isLoadingQuestions}
-                            backImageUrl={cardBackUrl}
-                        />
-                        
-                        {/* Static Question (From Card) */}
-                        {currentCard && isFlipped && (
-                        <div className="w-full bg-[#fdfbf7] p-6 rounded-xl shadow-lg shadow-black/20 border border-stone-200 text-center animate-fade-in relative mt-6">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-900 via-red-600 to-red-900 opacity-80 rounded-t-xl"></div>
-                            <div className="w-8 h-0.5 bg-red-100 mx-auto mb-3 rounded-full"></div>
-                            <p className="text-slate-800 font-serif text-lg italic leading-relaxed">
-                                "{currentCard.question}"
-                            </p>
-                        </div>
-                        )}
+        <div className="animate-fade-in flex flex-col gap-12">
+            <div className="flex flex-col lg:flex-row gap-12 items-start justify-center">
+                {/* Left Column: The Deck/Card */}
+                <div className="w-full lg:w-1/3 flex flex-col items-center relative lg:sticky lg:top-24 z-10">
+                    <CardDisplay 
+                        card={currentCard} 
+                        isFlipped={isFlipped} 
+                        onDraw={handleDrawCard}
+                        disabled={isDrawing || isLoadingQuestions}
+                        backImageUrl={cardBackUrl}
+                    />
+                    
+                    {/* Static Question (From Card) */}
+                    {currentCard && isFlipped && (
+                    <div className="w-full bg-[#fdfbf7] p-6 rounded-xl shadow-lg shadow-black/20 border border-stone-200 text-center animate-fade-in relative mt-6">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-900 via-red-600 to-red-900 opacity-80 rounded-t-xl"></div>
+                        <div className="w-8 h-0.5 bg-red-100 mx-auto mb-3 rounded-full"></div>
+                        <p className="text-slate-800 font-serif text-lg italic leading-relaxed">
+                            "{currentCard.question}"
+                        </p>
                     </div>
-
-                    {/* Right Column: AI Questions */}
-                    <div className="w-full lg:w-2/3 space-y-6">
-                        {/* Initial State Placeholder */}
-                        {!currentCard && !isDrawing && (
-                            <div className="hidden lg:flex flex-col items-center justify-center h-full min-h-[400px] border-2 border-dashed border-[#2a3832] rounded-2xl text-stone-600 p-8 text-center bg-[#1c2622]/50">
-                                <Sparkles className="w-12 h-12 mb-4 opacity-50" />
-                                <p className="font-serif text-lg">Wylosuj kartę, aby rozpocząć proces.</p>
-                            </div>
-                        )}
-
-                        {(currentCard || isLoadingQuestions) && (
-                            <div className="animate-fade-in-up space-y-6">
-                                <div className="bg-gradient-to-r from-red-950 to-[#2e0f0f] text-white rounded-2xl p-6 shadow-xl border border-red-900/30 relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-red-500 opacity-10 rounded-full blur-2xl transform translate-x-10 -translate-y-10"></div>
-                                    <h2 className="font-serif text-2xl mb-2 text-red-50">Analiza Karty</h2>
-                                    <p className="text-red-200/80 text-sm">
-                                        Emocja: <strong className="text-white">{currentCard?.name}</strong>. 
-                                        Wykorzystaj poniższe pytania do pogłębienia wglądu.
-                                    </p>
-                                </div>
-                                
-                                <QuestionList 
-                                    questions={questions} 
-                                    isLoading={isLoadingQuestions} 
-                                    cardName={currentCard?.name}
-                                    onRegenerate={() => currentCard && fetchQuestions(currentCard)}
-                                />
-                            </div>
-                        )}
-                    </div>
+                    )}
                 </div>
 
-                {/* Bottom Draw Button - Full width container */}
-                <div className="sticky bottom-4 z-40 flex justify-center pb-4 pt-2 pointer-events-none">
-                    <div className="pointer-events-auto shadow-2xl shadow-black/50 rounded-full">
-                        {!isDrawing && !isLoadingQuestions ? (
-                            <button 
-                                onClick={handleDrawCard}
-                                className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white px-10 py-4 rounded-full font-medium transition-all shadow-xl hover:shadow-amber-500/20 flex items-center gap-3 transform hover:-translate-y-1 active:scale-95 border-2 border-amber-400/30"
-                            >
-                                {isFlipped ? (
-                                    <>
-                                        <RotateCcw className="w-5 h-5" />
-                                        <span className="text-lg font-serif">Wylosuj kolejną kartę</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Sparkles className="w-5 h-5 text-amber-200" />
-                                        <span className="text-lg font-serif">Wylosuj kartę</span>
-                                    </>
-                                )}
-                            </button>
-                        ) : (
-                            <button disabled className="bg-[#2a3832] text-stone-400 px-10 py-4 rounded-full font-medium shadow-lg flex items-center gap-3 cursor-wait border border-stone-600">
-                            <Sparkles className="w-5 h-5 animate-spin" />
-                            <span className="text-lg font-serif">Tasowanie kart...</span>
-                            </button>
-                        )}
-                    </div>
+                {/* Right Column: AI Questions */}
+                <div className="w-full lg:w-2/3 space-y-6">
+                    {/* Initial State Placeholder */}
+                    {!currentCard && !isDrawing && (
+                        <div className="hidden lg:flex flex-col items-center justify-center h-full min-h-[400px] border-2 border-dashed border-[#2a3832] rounded-2xl text-stone-600 p-8 text-center bg-[#1c2622]/50">
+                            <Sparkles className="w-12 h-12 mb-4 opacity-50" />
+                            <p className="font-serif text-lg">Wylosuj kartę, aby rozpocząć proces.</p>
+                        </div>
+                    )}
+
+                    {(currentCard || isLoadingQuestions) && (
+                        <div className="animate-fade-in-up space-y-6">
+                            <div className="bg-gradient-to-r from-red-950 to-[#2e0f0f] text-white rounded-2xl p-6 shadow-xl border border-red-900/30 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-red-500 opacity-10 rounded-full blur-2xl transform translate-x-10 -translate-y-10"></div>
+                                <h2 className="font-serif text-2xl mb-2 text-red-50">Analiza Karty</h2>
+                                <p className="text-red-200/80 text-sm">
+                                    Emocja: <strong className="text-white">{currentCard?.name}</strong>. 
+                                    Wykorzystaj poniższe pytania do pogłębienia wglądu.
+                                </p>
+                            </div>
+                            
+                            <QuestionList 
+                                questions={questions} 
+                                isLoading={isLoadingQuestions} 
+                                cardName={currentCard?.name}
+                                onRegenerate={() => currentCard && fetchQuestions(currentCard)}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
-        )}
+
+            {/* Bottom Draw Button - Full width container */}
+            <div className="sticky bottom-4 z-40 flex justify-center pb-4 pt-2 pointer-events-none">
+                <div className="pointer-events-auto shadow-2xl shadow-black/50 rounded-full">
+                    {!isDrawing && !isLoadingQuestions ? (
+                        <button 
+                            onClick={handleDrawCard}
+                            className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white px-10 py-4 rounded-full font-medium transition-all shadow-xl hover:shadow-amber-500/20 flex items-center gap-3 transform hover:-translate-y-1 active:scale-95 border-2 border-amber-400/30"
+                        >
+                            {isFlipped ? (
+                                <>
+                                    <RotateCcw className="w-5 h-5" />
+                                    <span className="text-lg font-serif">Wylosuj kolejną kartę</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles className="w-5 h-5 text-amber-200" />
+                                    <span className="text-lg font-serif">Wylosuj kartę</span>
+                                </>
+                            )}
+                        </button>
+                    ) : (
+                        <button disabled className="bg-[#2a3832] text-stone-400 px-10 py-4 rounded-full font-medium shadow-lg flex items-center gap-3 cursor-wait border border-stone-600">
+                        <Sparkles className="w-5 h-5 animate-spin" />
+                        <span className="text-lg font-serif">Tasowanie kart...</span>
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
 
       </main>
     </div>
