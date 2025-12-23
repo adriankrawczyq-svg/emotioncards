@@ -192,7 +192,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
               <div className="bg-gradient-to-br from-stone-50 to-red-50/20 rounded-xl p-8 border border-stone-200">
                 <div className="flex items-center gap-2 mb-6 text-red-900">
                    <Heart className="w-5 h-5 text-red-700 fill-red-700" />
-                   <h3 className="font-serif font-bold text-lg">Podziel się przemyśleniami z Holistycznym mentorem</h3>
+                   <h3 className="font-serif font-bold text-lg">Podziel się przemyśleniami z Holistycznym Mentorem</h3>
                 </div>
                 
                 <p className="text-sm text-stone-600 mb-8 leading-relaxed whitespace-pre-line">
