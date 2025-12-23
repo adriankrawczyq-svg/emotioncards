@@ -15,7 +15,7 @@ export const generateQuestionsForCard = async (card: EmotionCard): Promise<strin
     
     `Związek z Twoim „teraz”\n\nJak to odnosi się do Twojej obecnej sytuacji życiowej? W jakim obszarze czujesz, że dotyka Cię najmocniej: decyzji, relacji, pracy, zdrowia, poczucia sensu?\nCzy to słowo / obraz miało dla Ciebie kiedyś inne znaczenie niż teraz? Jeśli tak – co się zmieniło?`,
     
-    `Mechanizm pod spodem\n\nCzy pokazuje dziś napięcie, kierunek czy potwierdzenie?\nCo się dzieje, gdy to ignorujesz – a co mogłoby się zmienić, gdybyś był/a na to uważny/a?`,
+    `Mechanizm pod spodem\n\nCo ta karta mówi o Twoim sposobie działania?\nCzy pokazuje dziś napięcie, kierunek czy potwierdzenie?\nCo się dzieje, gdy to ignorujesz –\na co mogłoby się zmienić, gdybyś był/a na to uważny/a?`,
     
     `Integracja – najważniejsze pytanie\n\nCo te odpowiedzi mówią Ci o Tobie i o sytuacji, z którą tu przyszłaś/przyszedłeś? Jaki jeden mały, ale konkretny krok mógłbyś/mogłabyś podjąć w najbliższych dniach lub tygodniach, żeby to przesłanie zaczęło realnie działać w Twoim życiu?\nNie „na zawsze”. Na teraz.`
   ];

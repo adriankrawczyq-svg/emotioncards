@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageCircleQuestion, Brain, Send, User, Mail, Phone, Calendar, CheckCircle, Heart, PenTool, AlertCircle } from 'lucide-react';
+import { MessageCircleQuestion, Brain, Send, User, Mail, Phone, Calendar, CheckCircle, Heart, PenTool, AlertCircle, ShieldCheck } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 
 // --- KONFIGURACJA EMAIL ---
@@ -38,11 +38,23 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Reset form when card changes
+  // Anti-spam state
+  const [mathParams, setMathParams] = useState({ n1: 0, n2: 0 });
+  const [mathAnswer, setMathAnswer] = useState('');
+  const [honeypot, setHoneypot] = useState('');
+
+  // Reset form and generate new math question when card changes
   useEffect(() => {
     setAnswers({});
     setStatus('idle');
     setErrorMessage('');
+    setMathAnswer('');
+    setHoneypot('');
+    // Generate simple math: numbers between 1 and 5
+    setMathParams({
+        n1: Math.floor(Math.random() * 5) + 1,
+        n2: Math.floor(Math.random() * 5) + 1
+    });
   }, [cardName, questions]);
 
   if (!cardName && !isLoading) return null;
@@ -60,6 +72,25 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
     setStatus('sending');
     setErrorMessage('');
 
+    // --- ANTI-SPAM CHECKS ---
+
+    // 1. Honeypot check (Silent fail)
+    // Jeśli ukryte pole jest wypełnione, udajemy sukces, ale nie wysyłamy maila.
+    if (honeypot !== '') {
+        setTimeout(() => setStatus('sent'), 500);
+        return;
+    }
+
+    // 2. Math challenge check
+    const correctAnswer = mathParams.n1 + mathParams.n2;
+    if (parseInt(mathAnswer) !== correctAnswer) {
+        setStatus('error');
+        setErrorMessage('Niepoprawny wynik działania matematycznego. Spróbuj ponownie.');
+        return;
+    }
+
+    // --- EMAIL SENDING LOGIC ---
+
     // Mapowanie płci na język polski dla czytelności w mailu
     const genderMap: Record<string, string> = {
       'female': 'Kobieta',
@@ -69,7 +100,6 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
     };
 
     // 1. Budowanie treści wiadomości (Dane + Odpowiedzi)
-    // Dzięki temu, nawet jeśli w EmailJS masz tylko zmienną {{message}}, wszystkie dane tam będą.
     let fullMessageBody = "=== DANE UCZESTNIKA ===\n";
     fullMessageBody += `Imię: ${contact.name}\n`;
     fullMessageBody += `Wiek: ${contact.age}\n`;
@@ -88,10 +118,8 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
     const templateParams = {
       name: contact.name,           // {{name}}
       email: contact.email,         // {{email}}
-      message: fullMessageBody,     // {{message}} - teraz zawiera też dane osobowe
+      message: fullMessageBody,     // {{message}}
       card_name: cardName,          // {{card_name}}
-      
-      // Przesyłamy też osobno, na wypadek gdybyś chciał użyć {{phone}} w temacie maila itp.
       phone: contact.phone,
       age: contact.age,
       gender: contact.gender
@@ -276,18 +304,51 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
                     </div>
                   </div>
 
+                  {/* HONEYPOT (Invisible to humans) */}
+                  <input
+                    type="text"
+                    name="website_validate_ref"
+                    value={honeypot}
+                    onChange={(e) => setHoneypot(e.target.value)}
+                    className="absolute w-0 h-0 opacity-0 -z-10"
+                    tabIndex={-1}
+                    autoComplete="off"
+                  />
+
+                  {/* Anti-Spam Math Challenge */}
+                  <div className="bg-stone-50 p-4 rounded-lg border border-stone-200">
+                    <div className="flex flex-col md:flex-row items-center gap-4">
+                        <div className="flex items-center gap-2 text-stone-600">
+                            <ShieldCheck className="w-5 h-5 text-amber-600" />
+                            <span className="text-sm font-bold">Weryfikacja:</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                             <span className="text-slate-800 font-serif text-lg italic">
+                                Ile to jest {mathParams.n1} + {mathParams.n2}?
+                             </span>
+                        </div>
+                        <input 
+                            required
+                            type="number"
+                            value={mathAnswer}
+                            onChange={(e) => setMathAnswer(e.target.value)}
+                            className="w-20 px-3 py-2 rounded-lg border border-stone-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 outline-none bg-white text-slate-800 text-center"
+                            placeholder="Wynik"
+                        />
+                    </div>
+                  </div>
+
                   {status === 'error' && (
                     <div className="flex items-start gap-3 bg-red-100 border border-red-200 p-4 rounded-lg text-red-800 text-sm">
                         <AlertCircle className="w-5 h-5 shrink-0" />
                         <div>
-                            <p className="font-bold">Wystąpił błąd przy wysyłaniu:</p>
+                            <p className="font-bold">Wystąpił błąd:</p>
                             <p>{errorMessage}</p>
-                            <p className="mt-2 text-xs opacity-75">Sprawdź czy wpisałeś poprawne klucze API w kodzie (SERVICE_ID, TEMPLATE_ID, PUBLIC_KEY).</p>
                         </div>
                     </div>
                   )}
 
-                  <div className="pt-6">
+                  <div className="pt-2">
                     <button 
                       type="submit" 
                       disabled={status === 'sending'}
