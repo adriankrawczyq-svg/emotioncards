@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { PREDEFINED_DECKS, CARD_BACK_URL } from './constants';
 import { EmotionCard } from './types';
@@ -122,7 +123,6 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-texture">
       <audio ref={audioRef} src={BACKGROUND_MUSIC_URL} loop preload="auto" />
 
-      {/* ERROR OVERLAY */}
       {apiError && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[60] w-[90%] max-w-md animate-fade-in">
             <div className="bg-red-950/90 border border-red-500 text-red-200 p-4 rounded-xl shadow-2xl backdrop-blur-md flex items-start gap-3">
@@ -150,15 +150,16 @@ const App: React.FC = () => {
               
               <div className="space-y-6">
                 <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold text-stone-100 leading-tight">
-                  Witaj w Punkcie Przejścia.
+                  Witaj.
                 </h1>
                 <p className="text-xl text-stone-300 font-serif">
                   To jest krótka chwila tylko dla Ciebie.
                 </p>
                 <div className="h-1 w-24 bg-gradient-to-r from-transparent via-red-800 to-transparent mx-auto opacity-50"></div>
                 
-                <div className="space-y-4 text-stone-400 text-lg leading-relaxed font-light font-serif max-w-xl mx-auto">
-                  <p>Zatrzymaj się na moment. Znajdź spokojne miejsce i pozwól sobie na szczerość wobec siebie.</p>
+                <div className="space-y-4 text-stone-400 text-lg leading-relaxed font-light font-serif max-w-xl mx-auto text-center">
+                  <p>Zatrzymaj się na moment. Znajdź spokojne miejsce, weź kilka wolnych oddechów i pozwól sobie na szczerość wobec siebie – bez oceniania, bez poprawiania czegokolwiek.</p>
+                  <p>To ćwiczenie nie jest po to, żeby „coś naprawić”. Jest po to, żeby zobaczyć, co jest teraz w Tobie żywe i co próbuje zostać nazwane.</p>
                 </div>
               </div>
 
