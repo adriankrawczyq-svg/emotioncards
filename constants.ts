@@ -1,6 +1,5 @@
 import { EmotionCard } from './types';
 
-// Usuwamy link do zawodnych obrazków zewnętrznych na rzecz stylizacji w kodzie
 export const CARD_BACK_URL = ""; 
 
 const RAW_EMOTIONS = [
@@ -13,11 +12,11 @@ const RAW_EMOTIONS = [
   { id: 'e7', name: 'Gniew', description: 'Wybuchający wulkan, płynąca lawa, ciemny dym, czerwona poświata. Styl akwarelowy.', question: 'Jakie granice zostały naruszone, że czujesz ten gniew?' },
   { id: 'e8', name: 'Lekceważenie', description: 'Osoba odchodząca, odwrócona plecami do kogoś wyciągającego rękę. Styl akwarelowy.', question: 'Co czujesz, gdy Twoje potrzeby nie są zauważane?' },
   { id: 'e9', name: 'Miłość', description: 'Dwa drzewa ze splątanymi korzeniami, świecące ciepłym światłem. Styl akwarelowy.', question: 'W jaki sposób okazujesz miłość sobie?' },
-  { id: 'e10', name: 'Nadzieja', description: 'Pojedynczy zielony pęd przebijający się przez popękany beton, promień słońca. Styl akwarelowy.', question: 'Co jest dziś tym promykiem światła w Twojatyuacji?' },
+  { id: 'e10', name: 'Nadzieja', description: 'Pojedynczy zielony pęd przebijający się przez popękany beton, promień słońca. Styl akwarelowy.', question: 'Co jest dziś tym promykiem światła w Twojej sytuacji?' },
   { id: 'e11', name: 'Napięcie', description: 'Linioskoczek balansujący nad przepaścią, mocno napięta lina. Styl akwarelowy.', question: 'W jakich sytuacjach Twoje napięcie najbardziej się nasila?' },
   { id: 'e12', name: 'Niechęć', description: 'Osoba odpychająca talerz z jedzeniem, odwracająca głowę. Styl akwarelowy.', question: 'Od czego próbujesz się odsunąć lub uciec?' },
   { id: 'e13', name: 'Nienawiść', description: 'Czarny ogień trawiący las, mroczne czerwone oczy w mroku. Styl akwarelowy.', question: 'Co próbujesz ochronić, gdy pojawia się ta nienawiść?' },
-  { id: 'e14', name: 'Niepewność', description: 'Osoba stojąna na rozdrożu w gęstej mgle. Styl akwarelowy.', question: 'Czego potrzebujesz, aby postawić pierwszy krok w nieznanym?' },
+  { id: 'e14', name: 'Niepewność', description: 'Osoba stojąca na rozdrożu w gęstej mgle. Styl akwarelowy.', question: 'Czego potrzebujesz, aby postawić pierwszy krok w nieznanym?' },
   { id: 'e15', name: 'Niezadowolenie', description: 'Szare chmury nad piknikiem, skrzyżowane ramiona. Styl akwarelowy.', question: 'Co musiałoby się zmienić, abyś poczuła/poczuł większą satysfakcję?' },
   { id: 'e16', name: 'Nuda', description: 'Zegary topniejące jak u Dalego, szary pokój, puste krzesło. Styl akwarelowy.', question: 'O czym informuje Cię brak zaangażowania w tę chwilę?' },
   { id: 'e17', name: 'Obawa', description: 'Cień majaczący nad małym domem, ciemnoniebieskie tony. Styl akwarelowy.', question: 'Jaki najgorszy scenariusz tworzy dziś Twoja wyobraźnia?' },
@@ -28,11 +27,11 @@ const RAW_EMOTIONS = [
   { id: 'e22', name: 'Poczucie bliskości', description: 'Dwa czoła stykające się, zamknięte oczy, miękkie światło. Styl akwarelowy.', question: 'Z kim czujesz się naprawdę bezpiecznie i dlaczego?' },
   { id: 'e23', name: 'Podniecenie', description: 'Lecące iskry, elektryczność, żywe fiolety i róże. Styl akwarelowy.', question: 'Co budzi w Tobie największą pasję i energię?' },
   { id: 'e24', name: 'Podziw', description: 'Osoba patrząca w górę na gigantyczne rozgwieżdżone niebo. Styl akwarelowy.', question: 'Kogo podziwiasz i jaką cechę chciałabyś/chciałbyś w sobie rozwinąć?' },
-  { id: 'e25', name: 'Pogarda', description: 'Patrzenie w dół z wysokiego tronu, zimne lodowate spojzenie. Styl akwarelowy.', question: 'Kogo lub co stawiasz dziś niżej od siebie — i dlaczego?' },
+  { id: 'e25', name: 'Pogarda', description: 'Patrzenie w dół z wysokiego tronu, zimne lodowate spojrzenie. Styl akwarelowy.', question: 'Kogo lub co stawiasz dziś niżej od siebie — i dlaczego?' },
   { id: 'e26', name: 'Pożądanie', description: 'Czerwone jabłko, ogień, sięgająca dłoń, intensywne kolory. Styl akwarelowy.', question: 'Czego pragniesz tak mocno, że trudno Ci o tym myśleć spokojnie?' },
   { id: 'e27', name: 'Przerażenie', description: 'Szeroko otwarte oczy w ciemności, sylwetka krzyczącej twarzy. Styl akwarelowy.', question: 'Czego unikasz, bo czujesz, że mogłoby zmienić zbyt wiele?' },
   { id: 'e28', name: 'Przygnębienie', description: 'Ciężka deszczowa chmura nad głową, niesienie ciężkiego worka. Styl akwarelowy.', question: 'Co sprawia, że czujesz dziś taki ciężar na barkach?' },
-  { id: 'e29', name: 'Radość', description: 'Kolorowe balony lecące w błękitne niebo, słoń. Styl akwarelowy.', question: 'Co w ostatnim czasie przywróciło Ci choć odrobinę lekkości?' },
+  { id: 'e29', name: 'Radość', description: 'Kolorowe balony lecące w błękitne niebo, jasne słońce. Styl akwarelowy.', question: 'Co w ostatnim czasie przywróciło Ci choć odrobinę lekkości?' },
   { id: 'e30', name: 'Rezygnacja', description: 'Upuszczenie miecza, siadanie na ziemi, zmierzch. Styl akwarelowy.', question: 'Z czego zrezygnowałaś/-eś — i czy ta decyzja nadal jest aktualna?' },
   { id: 'e31', name: 'Rozczarowanie', description: 'Puste pudełko po prezencie, pęknięty balon, szare kolory. Styl akwarelowy.', question: 'Jakie oczekiwania nie zostały spełnione?' },
   { id: 'e32', name: 'Rozkosz', description: 'Smakowanie miodu, miękki jedwab, zamknięte oczy. Styl akwarelowy.', question: 'Kiedy ostatnio pozwoliłaś/-eś sobie na czystą przyjemność?' },
