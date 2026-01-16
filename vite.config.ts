@@ -1,10 +1,10 @@
-
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Fix: Removed loadEnv and process.cwd() usage which caused Type errors.
-// As per instructions, process.env.API_KEY is automatically injected in the execution context,
-// so manual definition in 'define' block is not required.
 export default defineConfig({
   plugins: [react()],
+  define: {
+    // To jest kluczowe: przenosi wartość z environment variables Vercela do kodu aplikacji
+    'process.env.API_KEY': JSON.stringify(process.env.API_KEY),
+  },
 });
