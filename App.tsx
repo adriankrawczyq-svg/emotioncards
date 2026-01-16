@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { PREDEFINED_DECKS, CARD_BACK_URL } from './constants';
 import { EmotionCard } from './types';
-import { generateQuestionsForCard, generateImageForCard } from './services/geminiService';
+import { generateQuestionsForCard, generateImageForCard, getFallbackQuestions } from './services/geminiService';
 import { CardDisplay } from './components/CardDisplay';
 import { QuestionList } from './components/QuestionList';
-import { Feather, Sparkles, RotateCcw, ArrowRight, Volume2, VolumeX } from 'lucide-react';
+import { Feather, Sparkles, RotateCcw, ArrowRight, Volume2, VolumeX, AlertTriangle, XCircle } from 'lucide-react';
 
 const BACKGROUND_MUSIC_URL = "https://cdn.pixabay.com/audio/2022/10/18/audio_31c2730e64.mp3";
 
@@ -15,17 +15,10 @@ const App: React.FC = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [questions, setQuestions] = useState<string[]>([]);
-  const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(0.1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [cardBackUrl, setCardBackUrl] = useState<string>(CARD_BACK_URL);
-
-  useEffect(() => {
-    if (audioRef.current) {
-        audioRef.current.volume = volume;
-    }
-  }, [volume]);
 
   const toggleMute = () => {
     if (audioRef.current) {
@@ -60,22 +53,17 @@ const App: React.FC = () => {
   };
 
   const handleResetToWelcome = () => {
-    // Scroll to top first to prevent "empty view" feeling on mobile
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    
-    // Full state reset
     setHasStarted(false);
     setCurrentCard(null);
     setIsFlipped(false);
-    setIsDrawing(false);
-    setIsGeneratingImage(false);
-    setQuestions([]);
-    setIsLoadingQuestions(false);
+    setApiError(null);
   };
 
   const handleDrawCard = useCallback(async () => {
-    if (isDrawing || isLoadingQuestions || isGeneratingImage) return;
+    if (isDrawing || isGeneratingImage) return;
 
+    setApiError(null);
     const previousCardId = currentCard?.id;
     setIsDrawing(true);
     
@@ -106,23 +94,49 @@ const App: React.FC = () => {
     setIsGeneratingImage(true);
 
     try {
-      const [imageUrl, generatedQuestions] = await Promise.all([
+      const [imgResult, qResult] = await Promise.all([
         generateImageForCard(selectedCard),
         generateQuestionsForCard(selectedCard)
       ]);
       
-      setCurrentCard(prev => prev ? { ...prev, imageUrl } : null);
-      setQuestions(generatedQuestions);
-    } catch (error) {
+      if (imgResult.error || qResult.error) {
+        setApiError(imgResult.error || qResult.error || "Wystąpił błąd komunikacji z AI.");
+      }
+
+      setCurrentCard(prev => prev ? { 
+        ...prev, 
+        imageUrl: imgResult.data || `https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=800` 
+      } : null);
+      
+      setQuestions(qResult.data || getFallbackQuestions());
+    } catch (error: any) {
       console.error("Card drawing failed", error);
+      setApiError(error.message);
+      setQuestions(getFallbackQuestions());
     } finally {
       setIsGeneratingImage(false);
     }
-  }, [isDrawing, isFlipped, isLoadingQuestions, isGeneratingImage, currentCard]);
+  }, [isDrawing, isFlipped, isGeneratingImage, currentCard]);
 
   return (
     <div className="min-h-screen bg-texture">
       <audio ref={audioRef} src={BACKGROUND_MUSIC_URL} loop preload="auto" />
+
+      {/* ERROR OVERLAY */}
+      {apiError && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[60] w-[90%] max-w-md animate-fade-in">
+            <div className="bg-red-950/90 border border-red-500 text-red-200 p-4 rounded-xl shadow-2xl backdrop-blur-md flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                    <p className="text-xs font-bold uppercase tracking-wider mb-1">Diagnostyka API</p>
+                    <p className="text-sm opacity-90">{apiError}</p>
+                </div>
+                <button onClick={() => setApiError(null)} className="text-red-400 hover:text-white">
+                    <XCircle className="w-5 h-5" />
+                </button>
+            </div>
+        </div>
+      )}
 
       {!hasStarted ? (
         <div className="min-h-screen text-stone-200 font-sans flex items-center justify-center p-6 relative overflow-hidden">
@@ -144,14 +158,13 @@ const App: React.FC = () => {
                 <div className="h-1 w-24 bg-gradient-to-r from-transparent via-red-800 to-transparent mx-auto opacity-50"></div>
                 
                 <div className="space-y-4 text-stone-400 text-lg leading-relaxed font-light font-serif max-w-xl mx-auto">
-                  <p>Zatrzymaj się na moment. Znajdź spokojne miejsce, weź kilka głębokich oddechów i pozwól sobie na szczerość wobec siebie – bez oceniania, bez poprawiania czegokolwiek.</p>
-                  <p>To ćwiczenie nie jest po to, żeby „coś naprawić”. Jest po to, żeby zobaczyć, co jest teraz w Tobie żywe i co próbuje zostać nazwane.</p>
+                  <p>Zatrzymaj się na moment. Znajdź spokojne miejsce i pozwól sobie na szczerość wobec siebie.</p>
                 </div>
               </div>
 
               <button 
                 onClick={handleStart}
-                className="group bg-gradient-to-r from-red-900 to-red-800 hover:from-red-800 hover:to-red-700 text-stone-100 px-10 py-4 rounded-full font-medium text-lg transition-all shadow-xl hover:shadow-red-900/40 border border-red-700/50 flex items-center gap-3 mx-auto transform hover:-translate-y-1 active:scale-95"
+                className="group bg-gradient-to-r from-red-900 to-red-800 text-stone-100 px-10 py-4 rounded-full font-medium text-lg transition-all shadow-xl hover:shadow-red-900/40 border border-red-700/50 flex items-center gap-3 mx-auto transform hover:-translate-y-1 active:scale-95"
               >
                 <span>Zaczynam</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -163,10 +176,10 @@ const App: React.FC = () => {
           <header className="bg-[#0f1513] border-b border-[#2a3832] sticky top-0 z-50 shadow-md">
             <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
               <div className="flex items-center gap-3 cursor-pointer group" onClick={handleResetToWelcome}>
-                <div className="bg-gradient-to-br from-red-900 to-red-700 p-2 rounded-lg text-white shadow-lg shadow-red-900/20 ring-1 ring-red-800/50 group-hover:scale-105 transition-transform">
+                <div className="bg-gradient-to-br from-red-900 to-red-700 p-2 rounded-lg text-white shadow-lg group-hover:scale-105 transition-transform">
                     <Feather className="w-6 h-6" />
                 </div>
-                <h1 className="font-serif text-xl font-bold text-stone-200 tracking-tight leading-none group-hover:text-white transition-colors">Punkt Przejścia</h1>
+                <h1 className="font-serif text-xl font-bold text-stone-200 tracking-tight leading-none">Punkt Przejścia</h1>
               </div>
 
               <div className="flex items-center gap-3 bg-[#1c2622] pl-3 pr-2 py-1 rounded-full border border-[#2a3832]">
@@ -187,12 +200,11 @@ const App: React.FC = () => {
                             isFlipped={isFlipped} 
                             onDraw={handleDrawCard}
                             disabled={isDrawing || isGeneratingImage}
-                            backImageUrl={cardBackUrl}
                             isGeneratingImage={isGeneratingImage}
                         />
                         
                         {currentCard && isFlipped && (
-                        <div className="w-full bg-[#fdfbf7] p-6 rounded-xl shadow-lg shadow-black/20 border border-stone-200 text-center animate-fade-in relative mt-6">
+                        <div className="w-full bg-[#fdfbf7] p-6 rounded-xl shadow-lg border border-stone-200 text-center animate-fade-in relative mt-6">
                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-900 via-red-600 to-red-900 opacity-80 rounded-t-xl"></div>
                             <p className="text-slate-800 font-serif text-lg italic leading-relaxed">
                                 "{currentCard.question}"
@@ -206,16 +218,16 @@ const App: React.FC = () => {
                             <div className="flex flex-col items-center justify-center h-full min-h-[300px] border-2 border-dashed border-[#2a3832] rounded-2xl text-stone-600 p-8 text-center bg-[#1c2622]/50 w-full">
                                 <Sparkles className="w-12 h-12 mb-4 opacity-50 text-amber-500" />
                                 <h3 className="font-serif text-xl text-stone-300 mb-2">Gotowy do wglądu?</h3>
-                                <p className="font-serif text-stone-500 max-w-sm">Kliknij w kartę lub przycisk poniżej, aby wylosować emocję na ten moment.</p>
+                                <p className="font-serif text-stone-500">Kliknij w kartę, aby wylosować emocję na ten moment.</p>
                             </div>
                         )}
 
                         {(currentCard || isGeneratingImage) && (
                             <div className="animate-fade-in-up space-y-6">
-                                <div className="bg-gradient-to-r from-red-950 to-[#2e0f0f] text-white rounded-2xl p-6 shadow-xl border border-red-900/30 relative overflow-hidden">
+                                <div className="bg-gradient-to-r from-red-950 to-[#2e0f0f] text-white rounded-2xl p-6 shadow-xl border border-red-900/30">
                                     <h2 className="font-serif text-2xl mb-2 text-red-50">Analiza Karty</h2>
                                     <p className="text-red-200/80 text-sm">
-                                        Emocja: <strong className="text-white">{currentCard?.name || '...'}</strong>. 
+                                        Emocja: <strong className="text-white">{currentCard?.name || '...'}</strong>
                                     </p>
                                 </div>
                                 
@@ -230,29 +242,20 @@ const App: React.FC = () => {
                 </div>
 
                 <div className="sticky bottom-4 z-40 flex justify-center pb-4 pt-2 pointer-events-none">
-                    <div className="pointer-events-auto shadow-2xl shadow-black/50 rounded-full">
+                    <div className="pointer-events-auto shadow-2xl rounded-full">
                         {!isDrawing && !isGeneratingImage ? (
                             <button 
                                 onClick={handleDrawCard}
                                 className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white px-10 py-4 rounded-full font-medium transition-all shadow-xl flex items-center gap-3 transform hover:-translate-y-1 active:scale-95 border-2 border-amber-400/30"
                             >
-                                {isFlipped ? (
-                                    <>
-                                        <RotateCcw className="w-5 h-5" />
-                                        <span className="text-lg font-serif">Wylosuj kolejną kartę</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Sparkles className="w-5 h-5 text-amber-200" />
-                                        <span className="text-lg font-serif">Wylosuj kartę</span>
-                                    </>
-                                )}
+                                <RotateCcw className="w-5 h-5" />
+                                <span className="text-lg font-serif">{isFlipped ? "Wylosuj kolejną" : "Wylosuj kartę"}</span>
                             </button>
                         ) : (
-                            <button disabled className="bg-[#2a3832] text-stone-400 px-10 py-4 rounded-full font-medium shadow-lg flex items-center gap-3 cursor-wait border border-stone-600">
-                            <Sparkles className="w-5 h-5 animate-spin" />
-                            <span className="text-lg font-serif">Tasowanie kart...</span>
-                            </button>
+                            <div className="bg-[#2a3832] text-stone-400 px-10 py-4 rounded-full font-medium shadow-lg flex items-center gap-3 border border-stone-600">
+                                <Sparkles className="w-5 h-5 animate-spin" />
+                                <span className="text-lg font-serif">Analizuję pole...</span>
+                            </div>
                         )}
                     </div>
                 </div>

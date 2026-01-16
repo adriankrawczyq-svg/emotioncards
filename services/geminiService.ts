@@ -1,21 +1,26 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { EmotionCard } from "../types";
 
 /**
- * Zwraca klucz API z otoczenia. 
- * Na Vercelu musi być on dodany w zakładce Environment Variables jako API_KEY.
+ * Zwraca klucz API. Jeśli nie istnieje, wyrzuca błąd, który UI może przechwycić.
  */
-const API_KEY = process.env.API_KEY;
-
-export const generateQuestionsForCard = async (card: EmotionCard): Promise<string[]> => {
-  if (!API_KEY) {
-    console.warn("Gemini: Brak klucza API. Używam pytań domyślnych.");
-    return getFallbackQuestions();
+const getApiKey = () => {
+  const key = process.env.API_KEY;
+  if (!key || key === "") {
+    throw new Error("BRAK_KLUCZA: Zmienna API_KEY nie została znaleziona w środowisku (Vercel).");
   }
+  return key;
+};
 
+export interface GenerationResult<T> {
+  data: T | null;
+  error?: string;
+}
+
+export const generateQuestionsForCard = async (card: EmotionCard): Promise<GenerationResult<string[]>> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: API_KEY });
+    const apiKey = getApiKey();
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `Jesteś terapeutą. Wygeneruj 4 pytania do karty "${card.name}". Metafora: ${card.description}. Format: JSON array of strings.`,
@@ -29,56 +34,50 @@ export const generateQuestionsForCard = async (card: EmotionCard): Promise<strin
     });
 
     if (response.text) {
-      return JSON.parse(response.text.trim());
+      return { data: JSON.parse(response.text.trim()) };
     }
-  } catch (error) {
-    console.error("Gemini (Questions) Error:", error);
+    return { data: null, error: "Pusta odpowiedź z modelu (Text)." };
+  } catch (error: any) {
+    console.error("Gemini Questions Error:", error);
+    return { 
+      data: null, 
+      error: error.message?.includes("BRAK_KLUCZA") 
+        ? "Błąd konfiguracji: Klucz API nie jest ustawiony na Vercelu." 
+        : `Błąd API: ${error.message || "Nieznany błąd sieci."}`
+    };
   }
-
-  return getFallbackQuestions();
 };
 
-export const generateImageForCard = async (card: EmotionCard): Promise<string> => {
-  const fallbackImg = `https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=800&auto=format&fit=crop`;
-  
-  if (!API_KEY) {
-    console.warn("Gemini: Brak klucza API. Używam obrazu domyślnego.");
-    return fallbackImg;
-  }
-
+export const generateImageForCard = async (card: EmotionCard): Promise<GenerationResult<string>> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: API_KEY });
+    const apiKey = getApiKey();
+    const ai = new GoogleGenAI({ apiKey });
     
-    // Ustawiamy limit czasu (timeout) na poziomie logiki, by nie blokować UI
-    const generatePromise = ai.models.generateContent({
+    const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: { 
         parts: [{ text: `Watercolor art: ${card.name}, ${card.description}. Ethereal, mystical style. NO TEXT.` }] 
       },
     });
 
-    // Prosty "wyścig" z czasem - jeśli API nie odpowie w 15s, używamy fallbacku
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("Timeout")), 15000)
-    );
-
-    const response: any = await Promise.race([generatePromise, timeoutPromise]);
-
     if (response.candidates && response.candidates[0].content.parts) {
       for (const part of response.candidates[0].content.parts) {
         if (part.inlineData) {
-          return `data:image/png;base64,${part.inlineData.data}`;
+          return { data: `data:image/png;base64,${part.inlineData.data}` };
         }
       }
     }
-  } catch (error) {
-    console.error("Gemini (Image) Error:", error);
+    return { data: null, error: "Model nie zwrócił danych obrazu." };
+  } catch (error: any) {
+    console.error("Gemini Image Error:", error);
+    return { 
+      data: null, 
+      error: `Błąd obrazu: ${error.message || "Problem z generowaniem grafiki."}`
+    };
   }
-
-  return fallbackImg;
 };
 
-const getFallbackQuestions = () => [
+export const getFallbackQuestions = () => [
   "Co czujesz, gdy patrzysz na tę kartę po raz pierwszy?",
   "Jak ta emocja przejawia się w Twoim ciele w tej chwili?",
   "O czym ta karta próbuje Cię poinformować w kontekście Twoich relacji?",
