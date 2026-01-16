@@ -3,33 +3,27 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { EmotionCard } from "../types";
 
 /**
- * Generates psychological questions for a given emotion card using Gemini 3 Flash.
- * Follows guidelines for text tasks and structured JSON response.
+ * Zwraca klucz API z otoczenia. 
+ * Na Vercelu musi być on dodany w zakładce Environment Variables jako API_KEY.
  */
+const API_KEY = process.env.API_KEY;
+
 export const generateQuestionsForCard = async (card: EmotionCard): Promise<string[]> => {
-  // Initialize AI client right before use with the externally managed API key
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
+  if (!API_KEY) {
+    console.warn("Gemini: Brak klucza API. Używam pytań domyślnych.");
+    return getFallbackQuestions();
+  }
+
   try {
+    const ai = new GoogleGenAI({ apiKey: API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Jesteś doświadczonym terapeutą pracującym z kartami metaforycznymi. Twoim zadaniem jest wygenerowanie 4 głębokich, introspekcyjnych pytań do pracy z kartą o nazwie "${card.name}". 
-      Opis wizualny karty (metafora): ${card.description}.
-      Pytania muszą być podzielone na następujące obszary:
-      1. Pierwsza, spontaniczna reakcja na obraz i słowo.
-      2. Odniesienie do obecnej sytuacji życiowej lub relacji.
-      3. Głębszy mechanizm działania lub ukryte potrzeby.
-      4. Integracja i jeden konkretny "mały krok" na teraz.
-      
-      Zwracaj się do użytkownika ciepło, bezpośrednio i z empatią. Używaj języka inkluzywnego.`,
+      contents: `Jesteś terapeutą. Wygeneruj 4 pytania do karty "${card.name}". Metafora: ${card.description}. Format: JSON array of strings.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
-          items: {
-            type: Type.STRING,
-            description: "Psychologiczne pytanie terapeutyczne."
-          }
+          items: { type: Type.STRING }
         }
       }
     });
@@ -38,50 +32,55 @@ export const generateQuestionsForCard = async (card: EmotionCard): Promise<strin
       return JSON.parse(response.text.trim());
     }
   } catch (error) {
-    console.error("Gemini Questions Generation Error:", error);
+    console.error("Gemini (Questions) Error:", error);
   }
 
-  // Fallback to high-quality static questions if AI generation fails or is offline
-  return [
-    `Pierwsze poruszenie\n\nCo pojawia się w Tobie jako pierwsze, gdy widzisz tę kartę (obraz, słowo)? Jakie myśli, obrazy, emocje lub wspomnienia przychodzą spontanicznie – bez analizowania?`,
-    `Związek z Twoim „teraz”\n\nJak to odnosi się do Twojej obecnej sytuacji życiowej? W jakim obszarze czujesz, że dotyka Cię najmocniej: decyzji, relacji, pracy, zdrowia, poczucia sensu?`,
-    `Mechanizm pod spodem\n\nCo ta karta mówi o Twoim sposobie działania? Czy pokazuje dziś napięcie, kierunek czy potwierdzenie?`,
-    `Integracja – najważniejsze pytanie\n\nCo te odpowiedzi mówią Ci o Tobie i o sytuacji, z którą tu przyszłaś/przyszedłeś? Jaki jeden mały, ale konkretny krok mógłbyś/mogłabyś podjąć w najbliższych dniach?`
-  ];
+  return getFallbackQuestions();
 };
 
-/**
- * Generates an artistic metaphor image for an emotion card using gemini-2.5-flash-image.
- * Follows guidelines for image generation and result part iteration.
- */
 export const generateImageForCard = async (card: EmotionCard): Promise<string> => {
+  const fallbackImg = `https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=800&auto=format&fit=crop`;
+  
+  if (!API_KEY) {
+    console.warn("Gemini: Brak klucza API. Używam obrazu domyślnego.");
+    return fallbackImg;
+  }
+
   try {
-    // API key is handled externally and injected into process.env.API_KEY
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: API_KEY });
     
-    const prompt = `A mystical fine-art watercolor and ink illustration representing the emotion '${card.name}'. 
-    Visual metaphor: ${card.description}. 
-    Style: dark atmospheric watercolor, ink bleeding, ethereal lighting, psychological depth. 
-    NO TEXT. High artistic quality.`;
-    
-    const response = await ai.models.generateContent({
+    // Ustawiamy limit czasu (timeout) na poziomie logiki, by nie blokować UI
+    const generatePromise = ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
-      contents: { parts: [{ text: prompt }] },
+      contents: { 
+        parts: [{ text: `Watercolor art: ${card.name}, ${card.description}. Ethereal, mystical style. NO TEXT.` }] 
+      },
     });
 
-    const candidates = response.candidates;
-    if (candidates && candidates.length > 0) {
-      // Find the image part in the response as per guidelines, do not assume it is the first part
-      for (const part of candidates[0].content.parts) {
+    // Prosty "wyścig" z czasem - jeśli API nie odpowie w 15s, używamy fallbacku
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Timeout")), 15000)
+    );
+
+    const response: any = await Promise.race([generatePromise, timeoutPromise]);
+
+    if (response.candidates && response.candidates[0].content.parts) {
+      for (const part of response.candidates[0].content.parts) {
         if (part.inlineData) {
           return `data:image/png;base64,${part.inlineData.data}`;
         }
       }
     }
-    throw new Error("No image data returned from Gemini");
   } catch (error) {
-    console.error("Gemini Image Generation Error:", error);
-    // Safe fallback image for robust user experience
-    return `https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=800&auto=format&fit=crop`;
+    console.error("Gemini (Image) Error:", error);
   }
+
+  return fallbackImg;
 };
+
+const getFallbackQuestions = () => [
+  "Co czujesz, gdy patrzysz na tę kartę po raz pierwszy?",
+  "Jak ta emocja przejawia się w Twoim ciele w tej chwili?",
+  "O czym ta karta próbuje Cię poinformować w kontekście Twoich relacji?",
+  "Jaki mały krok możesz zrobić dzisiaj, by zaopiekować się tą częścią siebie?"
+];
