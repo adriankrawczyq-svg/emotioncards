@@ -1,26 +1,22 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { EmotionCard } from "../types";
-
-/**
- * Zwraca klucz API. Jeśli nie istnieje, wyrzuca błąd, który UI może przechwycić.
- */
-const getApiKey = () => {
-  const key = process.env.API_KEY;
-  if (!key || key === "") {
-    throw new Error("BRAK_KLUCZA: Zmienna API_KEY nie została znaleziona w środowisku (Vercel).");
-  }
-  return key;
-};
 
 export interface GenerationResult<T> {
   data: T | null;
   error?: string;
 }
 
+/**
+ * Generates therapeutic questions for an emotion card using the Gemini model.
+ * Adheres to @google/genai guidelines by initializing the client right before usage
+ * and obtaining the API key exclusively from process.env.API_KEY.
+ */
 export const generateQuestionsForCard = async (card: EmotionCard): Promise<GenerationResult<string[]>> => {
   try {
-    const apiKey = getApiKey();
-    const ai = new GoogleGenAI({ apiKey });
+    // Initialize GoogleGenAI directly before usage with the required named parameter.
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `Jesteś terapeutą. Wygeneruj 4 pytania do karty "${card.name}". Metafora: ${card.description}. Format: JSON array of strings.`,
@@ -33,25 +29,29 @@ export const generateQuestionsForCard = async (card: EmotionCard): Promise<Gener
       }
     });
 
-    if (response.text) {
-      return { data: JSON.parse(response.text.trim()) };
+    // Extract text using the .text property (not a method).
+    const text = response.text;
+    if (text) {
+      return { data: JSON.parse(text.trim()) };
     }
     return { data: null, error: "Pusta odpowiedź z modelu (Text)." };
   } catch (error: any) {
     console.error("Gemini Questions Error:", error);
     return { 
       data: null, 
-      error: error.message?.includes("BRAK_KLUCZA") 
-        ? "Błąd konfiguracji: Klucz API nie jest ustawiony na Vercelu." 
-        : `Błąd API: ${error.message || "Nieznany błąd sieci."}`
+      error: error.message || "Błąd komunikacji z AI (Pytania)."
     };
   }
 };
 
+/**
+ * Generates an image for an emotion card using the gemini-2.5-flash-image model.
+ * Iterates through response parts to correctly extract the base64 image data.
+ */
 export const generateImageForCard = async (card: EmotionCard): Promise<GenerationResult<string>> => {
   try {
-    const apiKey = getApiKey();
-    const ai = new GoogleGenAI({ apiKey });
+    // Initialize GoogleGenAI directly before usage.
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
@@ -60,10 +60,12 @@ export const generateImageForCard = async (card: EmotionCard): Promise<Generatio
       },
     });
 
+    // Iterate through all parts to find the image part as per guidelines.
     if (response.candidates && response.candidates[0].content.parts) {
       for (const part of response.candidates[0].content.parts) {
         if (part.inlineData) {
-          return { data: `data:image/png;base64,${part.inlineData.data}` };
+          const base64EncodeString = part.inlineData.data;
+          return { data: `data:image/png;base64,${base64EncodeString}` };
         }
       }
     }
