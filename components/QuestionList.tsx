@@ -3,8 +3,6 @@ import { MessageCircleQuestion, Brain, Send, User, Mail, Phone, Calendar, CheckC
 import emailjs from '@emailjs/browser';
 
 // --- KONFIGURACJA EMAIL ---
-// Zarejestruj się na https://www.emailjs.com/
-// Utwórz Service (np. Gmail) i Template
 const EMAIL_CONFIG = {
   SERVICE_ID: 'service_bpst954',   
   TEMPLATE_ID: 'template_u5172bb', 
@@ -37,24 +35,13 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
   });
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
-
-  // Anti-spam state
-  const [mathParams, setMathParams] = useState({ n1: 0, n2: 0 });
-  const [mathAnswer, setMathAnswer] = useState('');
   const [honeypot, setHoneypot] = useState('');
 
-  // Reset form and generate new math question when card changes
   useEffect(() => {
     setAnswers({});
     setStatus('idle');
     setErrorMessage('');
-    setMathAnswer('');
     setHoneypot('');
-    // Generate simple math: numbers between 1 and 5
-    setMathParams({
-        n1: Math.floor(Math.random() * 5) + 1,
-        n2: Math.floor(Math.random() * 5) + 1
-    });
   }, [cardName, questions]);
 
   if (!cardName && !isLoading) return null;
@@ -72,26 +59,13 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
     setStatus('sending');
     setErrorMessage('');
 
-    // --- ANTI-SPAM CHECKS ---
-
-    // 1. Honeypot check (Silent fail)
-    // Jeśli ukryte pole jest wypełnione, udajemy sukces, ale nie wysyłamy maila.
-    if (honeypot !== '') {
-        setTimeout(() => setStatus('sent'), 500);
+    // Honeypot check - if bot filled this invisible field, we simulate success but do nothing
+    if (honeypot.length > 0) {
+        console.log("Bot detected via honeypot.");
+        setTimeout(() => setStatus('sent'), 1500); // Simulate network delay
         return;
     }
 
-    // 2. Math challenge check
-    const correctAnswer = mathParams.n1 + mathParams.n2;
-    if (parseInt(mathAnswer) !== correctAnswer) {
-        setStatus('error');
-        setErrorMessage('Niepoprawny wynik działania matematycznego. Spróbuj ponownie.');
-        return;
-    }
-
-    // --- EMAIL SENDING LOGIC ---
-
-    // Mapowanie płci na język polski dla czytelności w mailu
     const genderMap: Record<string, string> = {
       'female': 'Kobieta',
       'male': 'Mężczyzna',
@@ -99,7 +73,6 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
       '': 'Nie podano'
     };
 
-    // 1. Budowanie treści wiadomości (Dane + Odpowiedzi)
     let fullMessageBody = "=== DANE UCZESTNIKA ===\n";
     fullMessageBody += `Imię: ${contact.name}\n`;
     fullMessageBody += `Wiek: ${contact.age}\n`;
@@ -114,12 +87,11 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
       fullMessageBody += `ODPOWIEDŹ: ${answers[idx] || '--- brak odpowiedzi ---'}\n\n`;
     });
 
-    // 2. Przygotowanie parametrów do EmailJS
     const templateParams = {
-      name: contact.name,           // {{name}}
-      email: contact.email,         // {{email}}
-      message: fullMessageBody,     // {{message}}
-      card_name: cardName,          // {{card_name}}
+      name: contact.name,           
+      email: contact.email,         
+      message: fullMessageBody,     
+      card_name: cardName,          
       phone: contact.phone,
       age: contact.age,
       gender: contact.gender
@@ -137,7 +109,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
     } catch (error: any) {
       console.error('Błąd wysyłania emaila:', error);
       setStatus('error');
-      setErrorMessage(error.text || error.message || 'Wystąpił nieoczekiwany błąd podczas wysyłania.');
+      setErrorMessage(error.text || error.message || 'Wystąpił nieoczekiwany błąd.');
     }
   };
 
@@ -149,7 +121,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
         </div>
         <h3 className="font-serif text-2xl text-slate-800 font-bold mb-4">Dziękuję, {contact.name}!</h3>
         <p className="text-slate-600 mb-6 leading-relaxed">
-          Twoje odpowiedzi dotyczące karty <strong>"{cardName}"</strong> zostały bezpiecznie wysłane na wskazany adres e-mail.<br/>
+          Twoje odpowiedzi dotyczące karty <strong>"{cardName}"</strong> zostały wysłane.<br/>
           Holistyczny Mentor przeanalizuje je i skontaktuje się z Tobą wkrótce.
         </p>
         <button 
@@ -178,17 +150,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
                 <div className="w-8 h-8 rounded-full bg-stone-200 shrink-0"></div>
                 <div className="h-4 bg-stone-200 rounded w-3/4 mt-2"></div>
             </div>
-            <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-stone-200 shrink-0"></div>
-                <div className="h-4 bg-stone-200 rounded w-1/2 mt-2"></div>
-            </div>
-            <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-stone-200 shrink-0"></div>
-                <div className="h-4 bg-stone-200 rounded w-5/6 mt-2"></div>
-            </div>
-            <p className="text-center text-stone-400 text-sm mt-6">
-              Przygotowuję przestrzeń do pracy z kartą...
-            </p>
+            <div className="h-4 bg-stone-200 rounded w-1/2 mt-4 ml-11"></div>
           </div>
         ) : (
           <div className="space-y-8">
@@ -196,7 +158,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
               {questions.map((q, idx) => (
                 <div key={idx} className="group animate-fade-in">
                   <div className="flex gap-4 mb-3">
-                    <div className="shrink-0 w-8 h-8 rounded-full bg-red-50 text-red-800 border border-red-100 flex items-center justify-center font-serif font-bold text-sm group-hover:bg-red-100 transition-colors shadow-sm">
+                    <div className="shrink-0 w-8 h-8 rounded-full bg-red-50 text-red-800 border border-red-100 flex items-center justify-center font-serif font-bold text-sm">
                         {idx + 1}
                     </div>
                     <p className="text-slate-800 leading-relaxed pt-1 font-medium font-serif whitespace-pre-line">
@@ -208,24 +170,22 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
                       value={answers[idx] || ''}
                       onChange={(e) => handleAnswerChange(idx, e.target.value)}
                       placeholder="Tutaj wpisz swoją odpowiedź..."
-                      className="w-full min-h-[100px] p-4 rounded-lg border border-stone-300 bg-white focus:bg-white focus:ring-2 focus:ring-red-900/20 focus:border-red-800 outline-none text-sm transition-all resize-y placeholder:text-stone-400 text-slate-800 shadow-inner"
+                      className="w-full min-h-[100px] p-4 rounded-lg border border-stone-300 bg-white focus:ring-2 focus:ring-red-900/20 focus:border-red-800 outline-none text-sm transition-all resize-y placeholder:text-stone-400 text-slate-800 shadow-inner"
                     />
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Contact Form Section */}
             <div className="border-t border-stone-200 pt-8 mt-8">
               <div className="bg-gradient-to-br from-stone-50 to-red-50/20 rounded-xl p-8 border border-stone-200">
                 <div className="flex items-center gap-2 mb-6 text-red-900">
                    <Heart className="w-5 h-5 text-red-700 fill-red-700" />
-                   <h3 className="font-serif font-bold text-lg">Podziel się przemyśleniami z Holistycznym Mentorem</h3>
+                   <h3 className="font-serif font-bold text-lg">Zostaw swoje dane</h3>
                 </div>
                 
                 <p className="text-sm text-stone-600 mb-8 leading-relaxed whitespace-pre-line">
-                  Jeśli po odpowiedziach poczujesz, że to, co się pojawiło, jest dla Ciebie ważne i chcesz spojrzeć na to z zewnątrz, możesz zostawić swoje dane i przesłać mi refleksje.{"\n"}
-                  Odezwę się z krótkim feedbackiem – i wtedy zobaczymy, czy to moment, w którym mogę Cię realnie wesprzeć.
+                  Jeśli chcesz otrzymać feedback od Holistycznego Mentora, zostaw swoje dane poniżej.
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
@@ -239,8 +199,8 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
                         type="text" 
                         value={contact.name}
                         onChange={(e) => handleContactChange('name', e.target.value)}
-                        className="w-full px-4 py-3 rounded-lg border border-stone-300 focus:border-red-700 focus:ring-2 focus:ring-red-900/10 outline-none transition-all bg-white text-slate-800 placeholder:text-stone-400"
-                        placeholder="Wpisz imię"
+                        className="w-full px-4 py-3 rounded-lg border border-stone-300 focus:border-red-700 focus:ring-2 focus:ring-red-900/10 outline-none transition-all bg-white text-slate-800"
+                        placeholder="Imię"
                       />
                     </div>
 
@@ -266,11 +226,9 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
                         <input 
                           required
                           type="number" 
-                          min="1" max="120"
                           value={contact.age}
                           onChange={(e) => handleContactChange('age', e.target.value)}
                           className="w-full px-4 py-3 rounded-lg border border-stone-300 focus:border-red-700 focus:ring-2 focus:ring-red-900/10 outline-none transition-all bg-white text-slate-800"
-                          placeholder="Lat"
                         />
                       </div>
                     </div>
@@ -287,7 +245,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
                         value={contact.email}
                         onChange={(e) => handleContactChange('email', e.target.value)}
                         className="w-full px-4 py-3 rounded-lg border border-stone-300 focus:border-red-700 focus:ring-2 focus:ring-red-900/10 outline-none transition-all bg-white text-slate-800"
-                        placeholder="twoj@email.pl"
+                        placeholder="email@example.com"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -299,52 +257,28 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
                         value={contact.phone}
                         onChange={(e) => handleContactChange('phone', e.target.value)}
                         className="w-full px-4 py-3 rounded-lg border border-stone-300 focus:border-red-700 focus:ring-2 focus:ring-red-900/10 outline-none transition-all bg-white text-slate-800"
-                        placeholder="(opcjonalnie)"
                       />
                     </div>
                   </div>
 
-                  {/* HONEYPOT (Invisible to humans) */}
-                  <input
-                    type="text"
-                    name="website_validate_ref"
-                    value={honeypot}
-                    onChange={(e) => setHoneypot(e.target.value)}
-                    className="absolute w-0 h-0 opacity-0 -z-10"
-                    tabIndex={-1}
-                    autoComplete="off"
-                  />
-
-                  {/* Anti-Spam Math Challenge */}
-                  <div className="bg-stone-50 p-4 rounded-lg border border-stone-200">
-                    <div className="flex flex-col md:flex-row items-center gap-4">
-                        <div className="flex items-center gap-2 text-stone-600">
-                            <ShieldCheck className="w-5 h-5 text-amber-600" />
-                            <span className="text-sm font-bold">Weryfikacja:</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                             <span className="text-slate-800 font-serif text-lg italic">
-                                Ile to jest {mathParams.n1} + {mathParams.n2}?
-                             </span>
-                        </div>
-                        <input 
-                            required
-                            type="number"
-                            value={mathAnswer}
-                            onChange={(e) => setMathAnswer(e.target.value)}
-                            className="w-20 px-3 py-2 rounded-lg border border-stone-300 focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 outline-none bg-white text-slate-800 text-center"
-                            placeholder="Wynik"
-                        />
-                    </div>
+                  {/* Honeypot field: invisible to humans, filled by bots */}
+                  <div className="opacity-0 absolute -z-50 h-0 w-0 overflow-hidden pointer-events-none">
+                    <label htmlFor="website_validate_ref">Do not fill this field</label>
+                    <input
+                      id="website_validate_ref"
+                      type="text"
+                      name="website_validate_ref"
+                      value={honeypot}
+                      onChange={(e) => setHoneypot(e.target.value)}
+                      tabIndex={-1}
+                      autoComplete="off"
+                    />
                   </div>
 
                   {status === 'error' && (
-                    <div className="flex items-start gap-3 bg-red-100 border border-red-200 p-4 rounded-lg text-red-800 text-sm">
+                    <div className="bg-red-100 border border-red-200 p-4 rounded-lg text-red-800 text-sm flex items-center gap-2">
                         <AlertCircle className="w-5 h-5 shrink-0" />
-                        <div>
-                            <p className="font-bold">Wystąpił błąd:</p>
-                            <p>{errorMessage}</p>
-                        </div>
+                        <p>{errorMessage}</p>
                     </div>
                   )}
 
@@ -352,19 +286,17 @@ export const QuestionList: React.FC<QuestionListProps> = ({ questions, isLoading
                     <button 
                       type="submit" 
                       disabled={status === 'sending'}
-                      className="w-full bg-gradient-to-r from-red-800 to-red-900 text-white font-medium py-4 rounded-xl shadow-lg hover:shadow-red-900/30 hover:from-red-700 hover:to-red-800 transition-all transform hover:-translate-y-0.5 active:scale-[0.99] flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-wait border border-red-700"
+                      className="w-full bg-gradient-to-r from-red-800 to-red-900 text-white font-medium py-4 rounded-xl shadow-lg hover:from-red-700 transition-all flex items-center justify-center gap-3 disabled:opacity-70"
                     >
-                      {status === 'sending' ? (
-                        'Wysyłanie zgłoszenia...'
-                      ) : (
+                      {status === 'sending' ? 'Wysyłanie...' : (
                         <>
                           <Send className="w-5 h-5" />
-                          <span className="font-serif tracking-wide">Wyślij swoje odpowiedzi</span>
+                          <span className="font-serif tracking-wide text-lg">Wyślij odpowiedzi</span>
                         </>
                       )}
                     </button>
-                    <p className="text-center text-xs text-stone-400 mt-4 leading-relaxed">
-                        Klikając 'Wyślij', zgadzasz się na przetwarzanie Twoich danych osobowych przez MW Harmony Marta Wysocka w celu obsługi Twoich odpowiedzi i przesłania oferty. Masz prawo do wglądu w swoje dane oraz ich usunięcia itp.
+                    <p className="text-center text-[10px] text-stone-400 mt-4">
+                        Wysyłając dane, zgadzasz się na ich przetwarzanie w celu obsługi zapytania.
                     </p>
                   </div>
                 </form>

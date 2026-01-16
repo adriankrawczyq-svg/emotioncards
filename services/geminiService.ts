@@ -1,15 +1,11 @@
+import { GoogleGenAI } from "@google/genai";
 import { EmotionCard } from "../types";
 
-// Note: We are no longer using the Gemini API for this specific feature as per the user's request 
-// to use universal static questions. The import is kept if needed for future features, 
-// but the function below is now synchronous and template-based.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const generateQuestionsForCard = async (card: EmotionCard): Promise<string[]> => {
-  // Simulate a very short delay for UX consistency (optional)
   await new Promise(resolve => setTimeout(resolve, 300));
 
-  // Universal therapeutic questions for metaphor cards
-  // Updated to 4 specific questions as requested.
   const questions = [
     `Pierwsze poruszenie\n\nCo pojawia się w Tobie jako pierwsze, gdy widzisz tę kartę (obraz, słowo)? Jakie myśli, obrazy, emocje lub wspomnienia przychodzą spontanicznie – bez analizowania?\nTu nie chodzi o „ładną odpowiedź”, tylko o prawdziwą reakcję.`,
     
@@ -21,4 +17,29 @@ export const generateQuestionsForCard = async (card: EmotionCard): Promise<strin
   ];
 
   return questions;
+};
+
+export const generateImageForCard = async (card: EmotionCard): Promise<string> => {
+  try {
+    // Proven prompt for high-quality metaphorical art (watercolor and ink)
+    const prompt = `A mystical fine-art watercolor and ink illustration representing the emotion '${card.name}'. 
+    Visual metaphor: ${card.description}. 
+    Style: dark atmospheric watercolor, ink bleeding, ethereal lighting, psychological depth. 
+    NO TEXT.`;
+    
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: { parts: [{ text: prompt }] },
+    });
+
+    for (const part of response.candidates?.[0]?.content?.parts || []) {
+      if (part.inlineData) {
+        return `data:image/png;base64,${part.inlineData.data}`;
+      }
+    }
+    throw new Error("No image data returned");
+  } catch (error) {
+    console.error("Gemini Image Generation Error:", error);
+    return `https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=800&auto=format&fit=crop`;
+  }
 };
